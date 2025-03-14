@@ -1,13 +1,29 @@
 # transaction_service.py
 import uuid
 from datetime import datetime
-from flask import g
+from flask import g, jsonify
+from repositories.account_repository import AccountRepository
 from repositories.transaction_repository import TransactionRepository
-from utils import helpers
 from utils.db import get_db
 from utils.validators import validate_required_fields, validate_transaction_type
 
 class TransactionService:
+    @staticmethod
+    def check_account_owner(account_id):
+        """Check if the current user owns the specified account."""
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT user_id FROM accounts WHERE id = ?", (account_id,))
+        account = cursor.fetchone()
+        if not account:
+            return False, "Account not found!", 404
+        current_user = g.current_user
+        if current_user.get('is_admin', False):
+            return True, None, None
+        if account['user_id'] != g.current_user['id']:
+            return False, "Unauthorized access to account!", 403
+        return True, None, None
+
     @staticmethod
     def check_transaction_auth(transaction_id):
         """Check if the current user is authorized to access a transaction."""
@@ -95,8 +111,9 @@ class TransactionService:
             return False, 'Invalid transaction type! Must be deposit, withdrawal, or transfer', 400
         # Check account authorization
         account_id = data.get('account_id')
-        authorized, error_message, status_code = helpers.check_account_owner(account_id)
-        print(authorized, error_message, status_code)
+        
+        authorized, error_message, status_code = TransactionService.check_account_owner(account_id)
+        print(f"cek auth {authorized}, {error_message}, {status_code}")
         if not authorized:
             return False, error_message, status_code
         # For transfers, check destination account exists

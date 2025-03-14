@@ -26,7 +26,7 @@ def get_all_accounts_by_user(user_id):
 @account_bp.route('/<string:account_id>', methods=['GET'])
 @token_required
 def get_account_details(account_id):
-    authorized, error_response, status_code = helpers.check_account_owner(account_id)
+    authorized, error_response, status_code = account_service.check_account_owner(account_id)
     if not authorized:
         return error_response, status_code
     
@@ -74,7 +74,6 @@ def delete_account(account_id):
 
 @account_bp.route('/<string:account_id>/status', methods=['PUT'])
 @token_required
-@admin_required
 def update_account_status(account_id):
     success, response, status_code = account_service.close_account(account_id)
     if not success:
@@ -84,7 +83,7 @@ def update_account_status(account_id):
 @account_bp.route('/<string:account_id>/balance', methods=['GET'])
 @token_required
 def get_balance_by_account_id(account_id):
-    authorized, error_response, status_code = helpers.check_account_owner(account_id)
+    authorized, error_response, status_code = account_service.check_account_owner(account_id)
     if not authorized:
         return error_response, status_code
     balance = account_service.get_account_balance(account_id)
