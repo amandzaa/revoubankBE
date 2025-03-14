@@ -1,0 +1,16 @@
+[project]
+name = "milestone-3-amandzaa"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.1.0",
+    "flask-jwt-extended>=4.7.1",
+    "flask-pymongo>=3.0.1",
+    "pymongo>=4.11.2",
+    "pytest>=8.3.5",
+    "python-dotenv>=1.0.1",
+    "taskipy>=1.14.1",
+    "werkzeug>=3.1.3",
+]
