@@ -1,8 +1,6 @@
 from datetime import datetime
-import sqlite3
 import uuid
 from flask import jsonify
-from models.account import Account
 from utils.db import get_db
 
 class AccountRepository:

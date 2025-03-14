@@ -1,4 +1,3 @@
-# auth_service.py
 from utils.auth import generate_token, verify_password, hash_password
 from utils.validators import validate_email, validate_password, validate_required_fields
 from repositories.auth_repository import AuthRepository

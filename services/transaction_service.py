@@ -1,16 +1,14 @@
-# transaction_service.py
 import uuid
 from datetime import datetime
-from flask import g, jsonify
-from repositories.account_repository import AccountRepository
+from flask import g
 from repositories.transaction_repository import TransactionRepository
 from utils.db import get_db
 from utils.validators import validate_required_fields, validate_transaction_type
 
+transaction_repository = TransactionRepository()
 class TransactionService:
     @staticmethod
     def check_account_owner(account_id):
-        """Check if the current user owns the specified account."""
         db = get_db()
         cursor = db.cursor()
         cursor.execute("SELECT user_id FROM accounts WHERE id = ?", (account_id,))
@@ -89,14 +87,15 @@ class TransactionService:
 
     @staticmethod
     def get_transaction_by_id(transaction_id):
-        """Get a specific transaction by ID."""
         authorized, transaction, error_message = TransactionService.check_transaction_auth(transaction_id)
         if not authorized:
             return None, error_message
-        transaction_repository = TransactionRepository()
         transaction = transaction_repository.find_by_id(transaction_id)
-        
-        return transaction, None
+        if not transaction:
+            return False, {'message': 'Account not found!'}, 404
+        else:
+            transaction = dict(transaction)
+        return True, transaction, 200
 
     @staticmethod
     def create_transaction(data):

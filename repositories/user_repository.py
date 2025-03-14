@@ -7,15 +7,10 @@ class UserRepository:
     def find_by_id(self, user_id):
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("SELECT id, name, email, is_admin FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT id, name, email, phone FROM users WHERE id = ?", (user_id,))
         user = cursor.fetchone()
         if user:
-            return {
-                'id': user['id'],
-                'name': user['name'],
-                'email': user['email'],
-                'is_admin': user['is_admin']
-            }
+            return dict(user)  # Convert SQLite Row to dictionary
         return None
     
     def find_by_email(self, email):
@@ -24,15 +19,6 @@ class UserRepository:
         cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
         row = cursor.fetchone()
         return User.from_row(row)
-    
-    def find_user_info(self, user_id):
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT id, name, email, phone FROM users WHERE id = ?", (user_id,))
-        user = cursor.fetchone()
-        if user:
-            return dict(user)  # Convert SQLite Row to dictionary
-        return None
     
     def create(self, name, email, password, phone=None):
         db = get_db()

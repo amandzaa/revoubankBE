@@ -1,4 +1,3 @@
-# auth_repository.py
 from datetime import datetime
 import uuid
 from utils.db import get_db

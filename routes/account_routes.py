@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify, g
 from utils import helpers
 from utils.auth import admin_required, token_required
-from utils.db import get_db
 from utils.validators import validate_required_fields
 from services.account_service import AccountService
 
@@ -23,19 +22,11 @@ def get_all_accounts_by_user(user_id):
     accounts = account_service.get_user_accounts(user_id)
     return jsonify([dict(account) for account in accounts])
 
-@account_bp.route('/<string:account_id>', methods=['GET'])
+@account_bp.route('/<string:account_id>/info', methods=['GET'])
 @token_required
 def get_account_details(account_id):
-    authorized, error_response, status_code = account_service.check_account_owner(account_id)
-    if not authorized:
-        return error_response, status_code
-    
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM accounts WHERE id = ?", (account_id,))
-    account = cursor.fetchone()
-    
-    return jsonify(dict(account)), 200
+    success, response_data, status_code = account_service.get_info_accounts(account_id)
+    return jsonify(response_data), status_code
 
 @account_bp.route('/<string:user_id>/create', methods=['POST'])
 @token_required
@@ -74,6 +65,7 @@ def delete_account(account_id):
 
 @account_bp.route('/<string:account_id>/status', methods=['PUT'])
 @token_required
+@admin_required
 def update_account_status(account_id):
     success, response, status_code = account_service.close_account(account_id)
     if not success:
@@ -83,7 +75,7 @@ def update_account_status(account_id):
 @account_bp.route('/<string:account_id>/balance', methods=['GET'])
 @token_required
 def get_balance_by_account_id(account_id):
-    authorized, error_response, status_code = account_service.check_account_owner(account_id)
+    authorized, error_response, status_code = helpers.check_account_owner(account_id)
     if not authorized:
         return error_response, status_code
     balance = account_service.get_account_balance(account_id)

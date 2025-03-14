@@ -1,5 +1,4 @@
-# transactions/routes.py
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify
 from utils.auth import admin_required, token_required
 from services.transaction_service import TransactionService
 
@@ -33,13 +32,11 @@ def get_all_transactions_by_account_id(user_id):
     )
     return jsonify(transactions)
 
-@transaction_bp.route('/<string:transaction_id>', methods=['GET'])
+@transaction_bp.route('/<string:transaction_id>/info', methods=['GET'])
 @token_required
 def get_transaction_info_by_transaction_id(transaction_id):
-    transaction, error_message = TransactionService.get_transaction_by_id(transaction_id)
-    if not transaction:
-        return jsonify({'message': error_message}), 404
-    return jsonify(transaction)
+    success, response_data, status_code = TransactionService.get_transaction_by_id(transaction_id)
+    return jsonify(response_data), status_code
 
 @transaction_bp.route('/create', methods=['POST'])
 @token_required

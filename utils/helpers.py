@@ -26,8 +26,7 @@ def check_user_owner(user_id):
         return False, {'message': 'User not found!'}, 404
     current_user = g.current_user
     if current_user.get('is_admin', False):
-        return True, None, None  # Admin users can access any user account
-    # Check if the current user is the owner of the account
+        return True, None, None 
     if current_user['id'] != user_id:
         return False, {'message': 'Unauthorized access to this user account!'}, 403
     return True, None, None
