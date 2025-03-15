@@ -13,24 +13,32 @@ account_service = AccountService()
 def get_all_accounts_all_users():
     user_id = g.current_user['id']
     accounts = account_service.get_all_accounts(user_id)
-    # Convert each account tuple to a dictionary and return as JSON
     return jsonify([dict(account) for account in accounts])
 
 @account_bp.route('/<string:user_id>', methods=['GET'])
 @token_required
 def get_all_accounts_by_user(user_id):
+    is_owner, error_response, status_code = helpers.check_user_owner(user_id)
+    if not is_owner:
+        return error_response, status_code
     accounts = account_service.get_user_accounts(user_id)
     return jsonify([dict(account) for account in accounts])
 
 @account_bp.route('/<string:account_id>/info', methods=['GET'])
 @token_required
 def get_account_details(account_id):
+    is_owner, error_response, status_code = helpers.check_account_owner(account_id)
+    if not is_owner:
+        return error_response, status_code
     success, response_data, status_code = account_service.get_info_accounts(account_id)
     return jsonify(response_data), status_code
 
 @account_bp.route('/<string:user_id>/create', methods=['POST'])
 @token_required
 def create_account_in_user(user_id):
+    is_owner, error_response, status_code = helpers.check_user_owner(user_id)
+    if not is_owner:
+        return error_response, status_code
     data = request.json
     valid, message = validate_required_fields(data, ['account_type', 'currency'])
     if not valid:
@@ -53,11 +61,17 @@ def create_account_in_user(user_id):
 @account_bp.route('/<string:account_id>', methods=['PUT'])
 @token_required
 def update_account(account_id):
+    is_owner, error_response, status_code = helpers.check_account_owner(account_id)
+    if not is_owner:
+        return error_response, status_code
     return account_service.update_account_info(account_id)
 
 @account_bp.route('/<string:account_id>', methods=['DELETE'])
 @token_required
 def delete_account(account_id):
+    is_owner, error_response, status_code = helpers.check_account_owner(account_id)
+    if not is_owner:
+        return error_response, status_code
     success, response, status_code = account_service.delete_account(account_id)
     if not success:
         return response, status_code
@@ -67,6 +81,9 @@ def delete_account(account_id):
 @token_required
 @admin_required
 def update_account_status(account_id):
+    is_owner, error_response, status_code = helpers.check_account_owner(account_id)
+    if not is_owner:
+        return error_response, status_code
     success, response, status_code = account_service.close_account(account_id)
     if not success:
         return response, status_code

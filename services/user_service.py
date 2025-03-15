@@ -23,6 +23,9 @@ class UserService:
         return True, user_info, 200
     
     def update_user(self, user_id, data):
+        is_owner, error_response, status_code = helpers.check_user_owner(user_id)
+        if not is_owner:
+            return False, error_response, status_code
         current_user = self.user_repository.find_by_id(user_id)
         if not current_user:
             return False, "User not found", {}
@@ -64,29 +67,12 @@ class UserService:
         return success, message, changes
     
     def delete_user(self, user_id):
+        is_owner, error_response, status_code = helpers.check_user_owner(user_id)
+        if not is_owner:
+            return False, error_response, status_code
         success = self.user_repository.delete(user_id)
         if not success:
             return False, "Failed to delete user"
         return True, "User deleted successfully"
     
-    def register_user(self, data):
-        # Validate data
-        if not all(field in data for field in ['name', 'email', 'phone', 'password']):
-            return False, "Missing required fields: name, email, phone, password"
-        # Check if email is already taken
-        existing_user = self.user_repository.find_by_email(data['email'])
-        if existing_user:
-            return False, "Email address is already taken"
-        # Hash password
-        data['password'] = hash_password(data['password'])
-        # Insert user into the database
-        success = self.user_repository.create(
-        email=data['email'],
-        name=data['name'],
-        phone=data['phone'],
-        password=data['password']
-        )
-        if not success:
-            return False, "Failed to register user"
-        return True, "User registered successfully"
     

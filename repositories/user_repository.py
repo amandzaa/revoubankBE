@@ -48,8 +48,6 @@ class UserRepository:
         # Track what changed
         changes = {}
         for field in updates:
-            # Use dictionary access for SQLite Row object
-            # Debug print comparison for each field
             if field in current_user.keys():
                 current_value = current_user[field]
                 new_value = updates[field]

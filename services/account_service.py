@@ -39,7 +39,6 @@ class AccountService:
         return True, "Balance updated successfully", new_balance
     
     def create_account(self, userid, account_name, account_type, currency, initial_balance, status):
-        # Validate account type
         valid_types = ['checking', 'savings', 'investment']
         if account_type not in valid_types:
             return False, f"Invalid account type. Must be one of: {', '.join(valid_types)}", None
@@ -47,10 +46,6 @@ class AccountService:
         return self.repository.create(userid, account_type, account_name, currency, initial_balance, status)
     
     def close_account(self, account_id):
-        is_owner, error_response, status_code = helpers.check_account_owner(account_id)
-        if not is_owner:
-            return False, error_response, status_code
-        # Get account balance
         account = self.repository.find_by_id(account_id)
         if account['balance'] > 0:
             return False, jsonify({'message': 'Cannot close account with positive balance!'}), 400
@@ -91,10 +86,6 @@ class AccountService:
         return True, account_info, 200
     
     def delete_account(self, account_id):
-        is_owner, error_response, status_code = helpers.check_account_owner(account_id)
-        if not is_owner:
-            return False, error_response, status_code
-        # Get account balance
         account = self.repository.find_by_id(account_id)
         if account['balance'] > 0:
             return False, jsonify({'message': 'Cannot close account with positive balance!'}), 400
@@ -104,9 +95,6 @@ class AccountService:
         return True, jsonify({'message': 'Account deleted successfully'}), 200
     
     def update_account_info(self, account_id):
-        authorized, error_response, status_code = helpers.check_account_owner(account_id)
-        if not authorized:  
-            return error_response, status_code
         data = request.json
         if not data:
             return jsonify({'message': 'No data provided!'}), 400
