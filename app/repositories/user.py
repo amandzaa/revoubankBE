@@ -21,7 +21,7 @@ class UserRepository:
             new_user = User(
                 username=username,
                 email=email,
-                password_hash=password_hash,
+                password=password_hash,
                 is_admin=is_admin
             )
             
@@ -35,23 +35,35 @@ class UserRepository:
 
     def update(self, user_id: int, updates: dict):
         try:
+            print(f"Updating user {user_id} with changes: {updates}")
+            
+            # Using self.db directly since that's your session object
             user = self.db.query(User).filter(User.id == user_id).first()
             
             if not user:
+                print(f"User {user_id} not found")
                 return None
-
-            # Update only allowed fields
-            allowed_fields = ['username', 'email', 'password_hash', 'is_admin']
+                
+            print(f"Found user: {user.username}, {user.email}")
+            
+            # Update fields - include phone in allowed fields
+            allowed_fields = ['username', 'email', 'password_hash', 'is_admin', 'phone']
             for field, value in updates.items():
                 if field in allowed_fields and hasattr(user, field):
+                    print(f"Updating {field} from {getattr(user, field)} to {value}")
                     setattr(user, field, value)
-            
+                else:
+                    print(f"Field {field} not allowed or doesn't exist on User model")
+                    
             self.db.commit()
+            print("Changes committed to database")
             self.db.refresh(user)
+            print(f"User after update: {user.username}, {user.email}")
             return user
-        
+            
         except SQLAlchemyError as e:
             self.db.rollback()
+            print(f"SQL error during update: {e}")
             raise
 
     def delete(self, user_id: int):

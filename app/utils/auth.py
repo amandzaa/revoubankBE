@@ -5,31 +5,7 @@ from functools import wraps
 import jwt
 from flask import request, jsonify, current_app, g
 from werkzeug.security import check_password_hash, generate_password_hash
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from app.models.user import User  # Assuming you have a User model defined
-
-class UserRepository:
-    def __init__(self):
-        # Create SQLAlchemy engine and session
-        self.engine = create_engine(os.getenv('DATABASE_URL'))
-        self.session = Session(self.engine)
-
-    def find_by_id(self, user_id):
-        try:
-            user = self.session.query(User).filter(User.id == user_id).first()
-            return user.to_dict() if user else None
-        except Exception as e:
-            print(f"Error finding user: {e}")
-            return None
-
-    def find_by_username(self, username):
-        try:
-            user = self.session.query(User).filter(User.username == username).first()
-            return user.to_dict() if user else None
-        except Exception as e:
-            print(f"Error finding user: {e}")
-            return None
+from app.repositories.user import UserRepository
 
 def generate_token(user_id):
     expiration = datetime.utcnow() + timedelta(minutes=current_app.config.get('JWT_EXPIRATION_MINUTES', 60))
@@ -76,12 +52,14 @@ def token_required(f):
             
             # Fetch the current user
             user_repo = UserRepository()
+            print(f"cek dataa{data['user_id']}")
             current_user = user_repo.find_by_id(data['user_id'])
+            print(f"current user {current_user}")
             
             if not current_user:
-                return jsonify({'message': 'User not found!'}), 401
+                return jsonify({'message': 'User not foundxxxx!'}), 401
             
-            g.current_user = current_user
+            g.current_user = current_user.to_dict() 
         
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired!'}), 401
@@ -94,7 +72,22 @@ def token_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not g.current_user.get('is_admin', False):
+        # First, make sure we have a current_user set by token_required
+        if not hasattr(g, 'current_user'):
+            return jsonify({'message': 'Authentication required!'}), 401
+        
+        # Check admin status based on your database structure
+        # If current_user is an SQLAlchemy model instance:
+        if hasattr(g.current_user, 'is_admin'):
+            is_admin = g.current_user.is_admin
+        # If current_user is a dictionary (from to_dict()):
+        elif isinstance(g.current_user, dict) and 'is_admin' in g.current_user:
+            is_admin = g.current_user['is_admin']
+        else:
+            is_admin = False
+            
+        if not is_admin:
             return jsonify({'message': 'Admin access required!'}), 403
+            
         return f(*args, **kwargs)
     return decorated

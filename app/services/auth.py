@@ -6,23 +6,20 @@ from app.repositories.auth import AuthRepository
 class AuthService:
     def __init__(self, db: Session):
         self.repository = AuthRepository(db)
-    
+
     def login(self, email: str, password: str):
         if not email or not password:
             return False, {'message': 'Email and password are required!'}, 400
-        
-        # Find user by email
+
         user = self.repository.find_user_by_email(email)
         if not user:
             return False, {'message': 'Invalid credentials! No email registered'}, 401
-        
-        # Verify password (using User object's password attribute)
+
         if not verify_password(user.password, password):
-            return False, {'message': 'Invalid credentials! Password didn\'t match'}, 401
-        
-        # Generate token
+            return False, {'message': "Invalid credentials! Password didn't match"}, 401
+
         token = generate_token(str(user.id))
-        
+
         return True, {
             'message': 'Login successful!',
             'token': token,
@@ -30,39 +27,37 @@ class AuthService:
                 'id': str(user.id)
             }
         }, 200
-        
+
     def register(self, user_data: dict):
-        # Prevent setting is_admin through registration
+        print("REGISTER STARTED")
         if 'is_admin' in user_data:
             return False, {'message': 'Forbidden: Only admins can set "is_admin" field.'}, 403
-        
-        # Validate required fields
-        valid, message = validate_required_fields(user_data, ['name', 'email', 'password'])
+
+        valid, message = validate_required_fields(user_data, ['username', 'email', 'password'])
         if not valid:
             return False, {'message': message}, 400
-        
-        # Validate email format
+
         if not validate_email(user_data.get('email')):
             return False, {'message': 'Invalid email format!'}, 400
-        
-        # Validate password strength
+        print("REGISTER STARTED2")
         valid_password, pwd_message = validate_password(user_data.get('password'))
+        print("REGISTER STARTED3")
         if not valid_password:
             return False, {'message': pwd_message}, 400
-        
-        # Check if user already exists
+        print("cek existing")
         if self.repository.user_exists(user_data.get('email')):
             return False, {'message': 'User already exists!'}, 409
-        
-        # Create new user
+        print("hashed password")
         hashed_password = hash_password(user_data.get('password'))
+        print("CREATING USER")
         success, result = self.repository.create_user(user_data, hashed_password)
-        
+        print("RESULT FROM REPO:", success, result)
+
         if success:
             user_info = user_data.copy()
             user_info.pop('password', None)
             return True, {
-                'message': 'User registered successfully!', 
+                'message': 'User registered successfully!',
                 'user_id': result,
                 'user_data': user_info
             }, 201

@@ -1,8 +1,8 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import os
 from dotenv import load_dotenv
+from app.utils.database_session_manager import db_session_manager  # Import your session manager
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +25,13 @@ def create_app():
     
     # Initialize SQLAlchemy with the app
     db.init_app(app)
+    
+    from app.utils.database_session_manager import db_session_manager
+    db_session_manager.init_app(app)
+    
+    @app.route('/test', methods=['GET'])
+    def test():
+        return jsonify({'message': 'test successful'}), 200
     
     # Import and register blueprints
     from app.routes.user import user_bp

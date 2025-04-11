@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, g, request, jsonify
 from app.utils.database_session_manager import get_db_session
 from app.utils.auth import admin_required, token_required
 from app.services.user import UserService
@@ -25,6 +25,7 @@ def get_user_profile(user_id):
 def update_user_profile(user_id):
     # Get request data
     data = request.json
+    print(f"cek data{data}")
     
     # Get database session
     db_session = get_db_session()
@@ -93,3 +94,26 @@ def delete_user(user_id):
         return jsonify({'message': str(e)}), 500
     finally:
         db_session.close()
+    
+@user_bp.route('/debug-user', methods=['GET'])
+@token_required
+def debug_user():
+    user_data = {
+        'type': str(type(g.current_user)),
+        'dir': str(dir(g.current_user)),
+        'is_dict': isinstance(g.current_user, dict)
+    }
+    
+    # If it's a dictionary
+    if isinstance(g.current_user, dict):
+        user_data['keys'] = list(g.current_user.keys())
+    # If it's an object
+    else:
+        try:
+            user_data['has_is_admin'] = hasattr(g.current_user, 'is_admin')
+            if hasattr(g.current_user, 'is_admin'):
+                user_data['is_admin_value'] = g.current_user.is_admin
+        except:
+            pass
+    
+    return jsonify(user_data), 200

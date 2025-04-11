@@ -1,20 +1,15 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.pool import StaticPool
 
-# Ensure the directory exists
-DB_FOLDER = "database"
-os.makedirs(DB_FOLDER, exist_ok=True)
+# PostgreSQL connection string
+# Format: postgresql://username:password@host:port/database_name
+DATABASE_URL = "postgresql://postgres:amanda@localhost:5432/byonegaes"
 
-# Define database path
-DATABASE_URL = f"sqlite:///{DB_FOLDER}/bankRev.db"
-
-# Create engine with specific SQLite configurations
+# Create engine for PostgreSQL
 engine = create_engine(
-    DATABASE_URL, 
-    connect_args={"check_same_thread": False},  # Required for SQLite
-    poolclass=StaticPool  # Helps with multi-threading in SQLite
+    DATABASE_URL,
+    # No SQLite-specific connect_args or poolclass needed for PostgreSQL
 )
 
 # Create a configured "Session" class

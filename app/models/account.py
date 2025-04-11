@@ -1,43 +1,45 @@
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 # from sqlalchemy.sql import func
-from app.database import Base
+from app import db
 
-class Account(Base):
+class Account(db.Model):
     __tablename__ = "accounts"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    account_type = Column(String(255), nullable=False)
-    account_number = Column(String(255), unique=True, nullable=False)
-    balance = Column(Numeric(10, 2), default=0.00)   
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    id = db.Column(db.Integer, primary_key=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    account_name = db.Column(db.String(255), nullable=False)
+    account_type = db.Column(db.String(255), nullable=False)
+    account_number = db.Column(db.String(255), unique=True, nullable=False)
+    currency = db.Column(db.String(255), nullable=False)
+    balance = db.Column(db.Numeric(10, 2), default=0.00)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
     # Relationship with user
-    user = relationship("User", back_populates="accounts")
+    user = db.relationship("User", back_populates="accounts")
 
     # Relationships with transactions
-    sent_transactions = relationship(
+    sent_transactions = db.relationship(
         "Transaction", 
         foreign_keys="[Transaction.from_account_id]", 
         back_populates="from_account"
     )
-    received_transactions = relationship(
+    received_transactions = db.relationship(
         "Transaction", 
         foreign_keys="[Transaction.to_account_id]", 
         back_populates="to_account"
     )
-    
+
     def to_dict(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
             'account_name': self.account_name,
             'account_type': self.account_type,
+            'account_number': self.account_number,
             'currency': self.currency,
-            'balance': self.balance,
-            'status': self.status,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
+            'balance': float(self.balance),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Optional, Tuple, List, Dict
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -13,7 +14,7 @@ class AccountRepository:
     def find_by_id(self, account_id: str) -> Optional[Account]:
         return self.db.query(Account).filter(Account.id == account_id).first()
     
-    def find_by_user_id(self, user_id: str) -> List[Account]:
+    def find_by_user_id(self, user_id: int) -> List[Account]:
         return self.db.query(Account).filter(Account.user_id == user_id).all()
     
     def find_all_accounts(self) -> List[Account]:
@@ -22,27 +23,37 @@ class AccountRepository:
     def find_account_info(self, account_id: str) -> Optional[Dict]:
         account = self.db.query(Account).filter(Account.id == account_id).first()
         return account.to_dict() if account else None
+    def find_by_account_number(self, account_number: str) -> Optional[Account]:
+        return self.db.query(Account).filter(Account.account_number == account_number).first()
     
     def create(
         self, 
-        user_id: str, 
-        account_type: str, 
+        user_id: str,
         account_name: str, 
+        account_type: str,
+        account_number: str,
         currency: str, 
-        initial_balance: float = 0, 
-        status: str = 'active'
+        initial_balance: float = 0
     ) -> Tuple[bool, str, Optional[str]]:
         if initial_balance < 0:
             return False, "Initial balance cannot be negative", None
         
         try:
+            # Convert user_id to integer
+            user_id_int = int(user_id)
+            
+            # Get the next ID value
+            max_id = self.db.query(func.max(Account.id)).scalar() or 0
+            next_id = max_id + 1
+            
             new_account = Account(
-                user_id=user_id,
+                id=next_id,  # Explicitly set the ID
+                user_id=user_id_int,
                 account_name=account_name,
                 account_type=account_type,
+                account_number=account_number,
                 currency=currency,
-                balance=initial_balance,
-                status=status
+                balance=initial_balance
             )
             
             self.db.add(new_account)
@@ -53,6 +64,9 @@ class AccountRepository:
         except SQLAlchemyError as e:
             self.db.rollback()
             return False, f"Failed to create account: {str(e)}", None
+        except Exception as e:
+            self.db.rollback()
+            return False, f"An error occurred: {str(e)}", None
     
     def update_balance(self, account_id: str, new_balance: float) -> Tuple[bool, str]:
         try:

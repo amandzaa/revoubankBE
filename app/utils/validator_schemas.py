@@ -3,6 +3,8 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime
 from typing import Optional
 
+from app.models.transaction import TransactionType
+
 # ✅ Standalone validation functions (to fix import issues)
 def validate_email(email: str) -> str:
     """Validates email format."""
@@ -11,15 +13,20 @@ def validate_email(email: str) -> str:
         raise ValueError("Invalid email format")
     return email
 
-def validate_password(password: str) -> str:
-    """Validates password strength."""
+def validate_password(password: str):
+    if not password:
+        return False, "Password is required"
+
     if len(password) < 8:
-        raise ValueError("Password must be at least 8 characters long")
+        return False, "Password must be at least 8 characters long"
+
     if not any(char.isdigit() for char in password):
-        raise ValueError("Password must contain at least one digit")
+        return False, "Password must contain at least one digit"
+
     if not any(char.isupper() for char in password):
-        raise ValueError("Password must contain at least one uppercase letter")
-    return password
+        return False, "Password must contain at least one uppercase letter"
+
+    return True, "Password is valid"
 
 def validate_required_fields(data, required_fields):
     if not data:
@@ -34,7 +41,7 @@ def validate_required_fields(data, required_fields):
 
 def validate_account_type(account_type):
     """Validate account type against allowed values."""
-    valid_types = ['checking', 'savings', 'investment', 'credit']
+    valid_types = ['checking', 'savings', 'investment', 'deposit']
     return account_type.lower() in valid_types
 
 def validate_currency(currency):
@@ -51,7 +58,7 @@ def validate_amount(amount):
 
 def validate_transaction_type(transaction_type):
     """Validate transaction type against allowed values."""
-    valid_types = ['deposit', 'withdrawal', 'transfer']
+    valid_types = [t.value for t in TransactionType]
     return transaction_type.lower() in valid_types
 
 # ✅ User Schema

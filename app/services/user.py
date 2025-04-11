@@ -33,6 +33,8 @@ class UserService:
         }, 200
     
     def update_user(self, user_id: int, data: dict):
+        print(f"Update request for user {user_id}: {data}")
+        
         is_owner, error_response, status_code = helpers.check_user_owner(user_id)
         if not is_owner:
             return False, error_response, status_code
@@ -43,43 +45,52 @@ class UserService:
         
         updates = {}
         changes = {}
-        allowed_fields = ['username', 'email', 'is_admin']
+        allowed_fields = ['username', 'email', 'is_admin', 'phone']
         is_current_user_admin = getattr(current_user, 'is_admin', False)
+        print(f"User is admin: {is_current_user_admin}")
         
+        # Handle regular fields
         for field in allowed_fields:
-            if field in data and data[field] is not None and data[field] != getattr(current_user, field, None):
-                # Special handling for email
-                if field == 'email':
-                    if not validate_email(data['email']):
-                        return False, "Invalid email format", {}
+            if field in data and data[field] is not None:
+                current_value = getattr(current_user, field, None)
+                
+                # Only update if there's an actual change
+                if data[field] != current_value:
+                    # Special handling for email
+                    if field == 'email':
+                        if not validate_email(data['email']):
+                            return False, "Invalid email format", {}
+                        
+                        existing_user = self.user_repository.find_by_email(data['email'])
+                        if existing_user and existing_user.id != user_id:
+                            return False, "Email already in use", {}
                     
-                    # Check if email is already in use by another user
-                    existing_user = self.user_repository.find_by_email(data['email'])
-                    if existing_user and existing_user.id != user_id:
-                        return False, "Email already in use", {}
-                
-                if field == 'is_admin' and not is_current_user_admin:
-                    return False, "Admin access required to update 'is_admin' field", {}
-                
-                updates[field] = data[field]
-                changes[field] = {
-                    'from': getattr(current_user, field),
-                    'to': data[field]
-                }
+                    # Check admin permissions
+                    if field == 'is_admin' and not is_current_user_admin:
+                        return False, "Admin access required to update 'is_admin' field", {}
+                    
+                    updates[field] = data[field]
+                    changes[field] = {
+                        'from': current_value,
+                        'to': data[field]
+                    }
         
-        # Handle password separately to hash it
+        # Handle password separately
         if 'password' in data and data['password']:
             valid_password, pwd_message = validate_password(data['password'])
             if not valid_password:
                 return False, pwd_message, {}
             
+            # IMPORTANT: Use password_hash here, not password
             updates['password_hash'] = hash_password(data['password'])
             changes['password'] = {
                 'from': '********',
                 'to': '********'
             }
         
-        # If no updates, return early
+        print(f"Final updates to apply: {updates}")
+        
+        # Return early if nothing to update
         if not updates:
             return True, "No changes to update", {}
         
@@ -88,8 +99,10 @@ class UserService:
             if not updated_user:
                 return False, "Failed to update user", {}
             
+            print(f"User updated successfully: {updated_user.username}")
             return True, "User updated successfully", changes
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
+            print(f"SQL error during update: {e}")
             return False, "An error occurred while updating the user", {}
     
     def delete_user(self, user_id: int):

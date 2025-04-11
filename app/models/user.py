@@ -1,20 +1,20 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
-from sqlalchemy.orm import relationship
-from app.database import Base
+from sqlalchemy import func
+from app import db
 
-class User(Base):
+class User(db.Model):
     __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(255), unique=True, index=True, nullable=False)
-    email = Column(String(255), unique=True, index=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
-    is_admin = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+    
+    id = db.Column(db.Integer, primary_key=True, index=True)
+    username = db.Column(db.String(255), unique=True, index=True, nullable=False)
+    email = db.Column(db.String(255), unique=True, index=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    
     # Relationship with accounts
-    accounts = relationship("Account", back_populates="user")
+    accounts = db.relationship("Account", back_populates="user")
     
     def to_dict(self):
         """Convert model to dictionary for easy serialization"""
@@ -22,6 +22,7 @@ class User(Base):
             'id': self.id,
             'username': self.username,
             'email': self.email,
+            'phone': self.phone,
             'is_admin': self.is_admin,
             'created_at': self.created_at,
             'updated_at': self.updated_at
